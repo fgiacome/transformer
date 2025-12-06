@@ -19,12 +19,12 @@ image, also printing it (and the results) to the terminal.
 To run the MNIST training program, download the MNIST dataset to
 `datastes/mnist/`, then:
 ```bash
-cargo run --release mnist_train
+cargo run --release --bin mnist_train
 ```
 The model will be saved to `mnist_model.bin`.
 And to test (after training):
 ```bash
-cargo run --release mnist_test
+cargo run --release --bin mnist_test
 ```
 
 The final goal of this project would be to implement and train a
