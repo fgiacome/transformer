@@ -1,14 +1,16 @@
 use faer::prelude::*;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
-pub mod models;
-pub mod losses;
-pub mod optimizers;
 pub mod io;
+pub mod losses;
+pub mod models;
+pub mod optimizers;
 
 // Re-export commonly used items
-pub use models::{Model, Feedforward, SigmoidActivation, RELUActivation, SoftmaxActivation, ModelType};
-pub use losses::{Loss, CrossEntropyLoss};
+pub use losses::{CrossEntropyLoss, Loss};
+pub use models::{
+    Feedforward, Model, ModelType, RELUActivation, SigmoidActivation, SoftmaxActivation,
+};
 pub use optimizers::{Optimizer, SGD};
 
 #[derive(Serialize, Deserialize)]
@@ -20,8 +22,8 @@ pub struct Parameter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use models::Model;
     use losses::Loss;
+    use models::Model;
 
     #[test]
     fn test_feedforward_single_input() {
@@ -119,14 +121,22 @@ mod tests {
             for i in 0..output.nrows() {
                 sum += output[(i, j)];
             }
-            assert!((sum - 1.0).abs() < 1e-6, "Probabilities should sum to 1, got {}", sum);
+            assert!(
+                (sum - 1.0).abs() < 1e-6,
+                "Probabilities should sum to 1, got {}",
+                sum
+            );
         }
 
         // Check all values are between 0 and 1
         for j in 0..output.ncols() {
             for i in 0..output.nrows() {
                 let val = output[(i, j)];
-                assert!(val >= 0.0 && val <= 1.0, "Probability should be in [0,1], got {}", val);
+                assert!(
+                    val >= 0.0 && val <= 1.0,
+                    "Probability should be in [0,1], got {}",
+                    val
+                );
             }
         }
     }
@@ -160,7 +170,8 @@ mod tests {
         let mut layer = Feedforward::new(10, 5);
 
         // Get parameters for comparison
-        let original_params: Vec<_> = layer.parameters_mut()
+        let original_params: Vec<_> = layer
+            .parameters_mut()
             .iter()
             .map(|p| p.value.clone())
             .collect();
@@ -173,7 +184,8 @@ mod tests {
         let mut loaded_layer: Feedforward = io::load(path).unwrap();
 
         // Get loaded parameters
-        let loaded_params: Vec<_> = loaded_layer.parameters_mut()
+        let loaded_params: Vec<_> = loaded_layer
+            .parameters_mut()
             .iter()
             .map(|p| p.value.clone())
             .collect();
@@ -192,7 +204,8 @@ mod tests {
                         loaded[(i, j)],
                         original[(i, j)],
                         "Parameter mismatch at ({}, {})",
-                        i, j
+                        i,
+                        j
                     );
                 }
             }
@@ -236,7 +249,8 @@ mod tests {
                     loaded_output[(i, j)],
                     original_output[(i, j)],
                     "Output mismatch at ({}, {})",
-                    i, j
+                    i,
+                    j
                 );
             }
         }

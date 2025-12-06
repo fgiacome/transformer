@@ -1,5 +1,5 @@
-use faer::prelude::*;
 use crate::models::Model;
+use faer::prelude::*;
 
 pub trait Optimizer {
     /// Performs a single optimization step, updating model parameters based on their gradients

@@ -1,8 +1,8 @@
 use clap::Parser;
 use faer::prelude::*;
-use std::path::PathBuf;
-use transformer::{models::Model, ModelType, io};
 use rand::Rng;
+use std::path::PathBuf;
+use transformer::{ModelType, io, models::Model};
 
 #[derive(Parser, Debug)]
 #[command(name = "mnist-test")]
@@ -28,9 +28,7 @@ fn main() {
 
     // Load MNIST test dataset
     let mnist::Mnist {
-        tst_img,
-        tst_lbl,
-        ..
+        tst_img, tst_lbl, ..
     } = mnist::MnistBuilder::new()
         .base_path(&args.dataset_path.to_string_lossy())
         .label_format_one_hot()
@@ -43,7 +41,11 @@ fn main() {
     let image_idx = match args.image_index {
         Some(idx) => {
             if idx >= num_test {
-                eprintln!("Error: Image index {} is out of range (max: {})", idx, num_test - 1);
+                eprintln!(
+                    "Error: Image index {} is out of range (max: {})",
+                    idx,
+                    num_test - 1
+                );
                 std::process::exit(1);
             }
             println!("Using specified image index: {}", idx);
@@ -78,17 +80,13 @@ fn main() {
     }
 
     // Prepare input (784, 1) - single image
-    let input = Mat::from_fn(784, 1, |i, _| {
-        tst_img[image_start + i] as f32 / 255.0
-    });
+    let input = Mat::from_fn(784, 1, |i, _| tst_img[image_start + i] as f32 / 255.0);
 
     // Run inference
     let output = network.forward(&input);
 
     // Find predicted class and get all probabilities
-    let mut predictions: Vec<(usize, f32)> = (0..10)
-        .map(|i| (i, output[(i, 0)]))
-        .collect();
+    let mut predictions: Vec<(usize, f32)> = (0..10).map(|i| (i, output[(i, 0)])).collect();
 
     // Sort by probability (descending)
     predictions.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
@@ -108,12 +106,14 @@ fn main() {
     println!("  True Label:      {}", true_label);
     println!("  Predicted Label: {}", predicted_label);
     println!("  Confidence:      {:02.2}%", confidence);
-    println!("  Status:          {}",
+    println!(
+        "  Status:          {}",
         if predicted_label == true_label {
             "CORRECT"
         } else {
             "INCORRECT"
-        });
+        }
+    );
 
     // Display top 3 predictions
     println!("\nTop 3 Predictions:");

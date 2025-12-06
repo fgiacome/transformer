@@ -2,8 +2,8 @@ use clap::Parser;
 use faer::prelude::*;
 use std::path::PathBuf;
 use transformer::{
-    models::Model, Feedforward, RELUActivation, SoftmaxActivation, ModelType,
-    CrossEntropyLoss, Loss, Optimizer, SGD, io,
+    CrossEntropyLoss, Feedforward, Loss, ModelType, Optimizer, RELUActivation, SGD,
+    SoftmaxActivation, io, models::Model,
 };
 
 #[derive(Parser, Debug)]
@@ -59,10 +59,7 @@ fn main() {
     println!("Test samples: {}", num_test);
 
     // Build network: 784 -> hidden_size -> 10
-    println!(
-        "Building MLP: 784 -> {} -> 10",
-        args.hidden_size
-    );
+    println!("Building MLP: 784 -> {} -> 10", args.hidden_size);
 
     let mut network: Vec<ModelType> = vec![
         ModelType::Feedforward(Feedforward::new(784, args.hidden_size)),
@@ -133,7 +130,10 @@ fn main() {
     }
 
     let final_accuracy = evaluate(&mut network, &tst_img, &tst_lbl, num_test);
-    println!("Training complete! Final test accuracy: {:.2}%", final_accuracy * 100.0);
+    println!(
+        "Training complete! Final test accuracy: {:.2}%",
+        final_accuracy * 100.0
+    );
 
     // Save the trained model
     println!("Saving model to {:?}...", args.output);

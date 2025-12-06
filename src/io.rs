@@ -1,7 +1,7 @@
+use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::io::{self, Read, Write};
 use std::path::Path;
-use serde::{Serialize, Deserialize};
 
 /// Saves a serializable model to a file using bincode
 ///

@@ -1,8 +1,8 @@
 use faer::prelude::*;
-use faer::{zip, unzip};
+use faer::{unzip, zip};
 use rand::rng;
 use rand_distr::{Distribution, Uniform};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::Parameter;
 
@@ -75,10 +75,14 @@ impl Model for Feedforward {
         let mut output = Mat::zeros(wx.nrows(), wx.ncols());
 
         for j in 0..wx.ncols() {
-            zip!(&mut output.col_mut(j), &wx.col(j), &self.biases.value.col(0))
-                .for_each(|unzip!(out, wx_val, bias)| {
-                    *out = *wx_val + *bias;
-                });
+            zip!(
+                &mut output.col_mut(j),
+                &wx.col(j),
+                &self.biases.value.col(0)
+            )
+            .for_each(|unzip!(out, wx_val, bias)| {
+                *out = *wx_val + *bias;
+            });
         }
 
         output
@@ -86,9 +90,9 @@ impl Model for Feedforward {
 
     fn gradient(&mut self, loss: &Mat<f32>) -> Mat<f32> {
         let last_input = self
-                .last_input
-                .as_ref()
-                .expect("Last input is not cached, cannot compute gradient");
+            .last_input
+            .as_ref()
+            .expect("Last input is not cached, cannot compute gradient");
 
         // Gradient for weights: loss * last_input^T
         self.weights.grad += loss * last_input.transpose();
@@ -200,10 +204,10 @@ impl Model for SigmoidActivation {
         grad_input
     }
 
-    fn zero_grad(&mut self) { }
+    fn zero_grad(&mut self) {}
 
     fn parameters_mut(&mut self) -> Vec<&mut Parameter> {
-        vec![]  // No trainable parameters
+        vec![] // No trainable parameters
     }
 }
 
@@ -243,10 +247,10 @@ impl Model for RELUActivation {
         grad_input
     }
 
-    fn zero_grad(&mut self) { }
+    fn zero_grad(&mut self) {}
 
     fn parameters_mut(&mut self) -> Vec<&mut Parameter> {
-        vec![]  // No trainable parameters
+        vec![] // No trainable parameters
     }
 }
 
@@ -306,10 +310,10 @@ impl Model for SoftmaxActivation {
         })
     }
 
-    fn zero_grad(&mut self) { }
+    fn zero_grad(&mut self) {}
 
     fn parameters_mut(&mut self) -> Vec<&mut Parameter> {
-        vec![]  // No trainable parameters
+        vec![] // No trainable parameters
     }
 }
 
@@ -321,11 +325,14 @@ impl Model for Vec<Box<dyn Model>> {
     }
 
     fn forward(&mut self, x: &Mat<f32>) -> Mat<f32> {
-        self.iter_mut().fold(x.clone(), |acc, model| model.forward(&acc))
+        self.iter_mut()
+            .fold(x.clone(), |acc, model| model.forward(&acc))
     }
 
     fn gradient(&mut self, loss: &Mat<f32>) -> Mat<f32> {
-        self.iter_mut().rev().fold(loss.clone(), |acc, model| model.gradient(&acc))
+        self.iter_mut()
+            .rev()
+            .fold(loss.clone(), |acc, model| model.gradient(&acc))
     }
 
     fn zero_grad(&mut self) {
@@ -403,11 +410,14 @@ impl Model for Vec<ModelType> {
     }
 
     fn forward(&mut self, x: &Mat<f32>) -> Mat<f32> {
-        self.iter_mut().fold(x.clone(), |acc, model| model.forward(&acc))
+        self.iter_mut()
+            .fold(x.clone(), |acc, model| model.forward(&acc))
     }
 
     fn gradient(&mut self, loss: &Mat<f32>) -> Mat<f32> {
-        self.iter_mut().rev().fold(loss.clone(), |acc, model| model.gradient(&acc))
+        self.iter_mut()
+            .rev()
+            .fold(loss.clone(), |acc, model| model.gradient(&acc))
     }
 
     fn zero_grad(&mut self) {
