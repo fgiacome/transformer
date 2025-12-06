@@ -109,7 +109,7 @@ impl Model for Feedforward {
 #[derive(Serialize, Deserialize)]
 pub struct SigmoidActivation {
     inference: bool,
-    last_input: Option<Mat<f32>>,
+    last_output: Option<Mat<f32>>,
 }
 
 impl SigmoidActivation {
@@ -117,7 +117,7 @@ impl SigmoidActivation {
     pub fn new() -> Self {
         Self {
             inference: false,
-            last_input: None,
+            last_output: None,
         }
     }
 }
@@ -144,29 +144,30 @@ impl Model for SigmoidActivation {
     }
 
     fn forward(&mut self, x: &Mat<f32>) -> Mat<f32> {
-        if !self.inference {
-            self.last_input = Some(x.clone());
-        }
-
         // sigmoid(x) = 1 / (1 + exp(-x))
-        Mat::from_fn(x.nrows(), x.ncols(), |i, j| {
+        let output = Mat::from_fn(x.nrows(), x.ncols(), |i, j| {
             let val = x[(i, j)];
             1.0 / (1.0 + (-val).exp())
-        })
+        });
+
+        if !self.inference {
+            self.last_output = Some(output.clone());
+        }
+
+        output
     }
 
     fn gradient(&mut self, loss: &Mat<f32>) -> Mat<f32> {
-        let last_input = self
-            .last_input
+        let sigmoid_output = self
+            .last_output
             .as_ref()
-            .expect("Last input is not cached, cannot compute gradient");
+            .expect("Last output is not cached, cannot compute gradient");
 
         // sigmoid'(x) = sigmoid(x) * (1 - sigmoid(x))
-        // Element-wise multiplication of loss and sigmoid gradient
+        // Using cached sigmoid output to avoid recomputation
         Mat::from_fn(loss.nrows(), loss.ncols(), |i, j| {
-            let val = last_input[(i, j)];
-            let sigmoid_val = 1.0 / (1.0 + (-val).exp());
-            let sigmoid_grad = sigmoid_val * (1.0 - sigmoid_val);
+            let s = sigmoid_output[(i, j)];
+            let sigmoid_grad = s * (1.0 - s);
             loss[(i, j)] * sigmoid_grad
         })
     }
