@@ -2,7 +2,7 @@ use clap::Parser;
 use faer::prelude::*;
 use std::path::PathBuf;
 use transformer::{
-    models::Model, Feedforward, SigmoidActivation, SoftmaxActivation, ModelType,
+    models::Model, Feedforward, RELUActivation, SoftmaxActivation, ModelType,
     CrossEntropyLoss, Loss, Optimizer, SGD, io,
 };
 
@@ -66,7 +66,7 @@ fn main() {
 
     let mut network: Vec<ModelType> = vec![
         ModelType::Feedforward(Feedforward::new(784, args.hidden_size)),
-        ModelType::Sigmoid(SigmoidActivation::new()),
+        ModelType::RELU(RELUActivation::new()),
         ModelType::Feedforward(Feedforward::new(args.hidden_size, 10)),
         ModelType::Softmax(SoftmaxActivation::new()),
     ];

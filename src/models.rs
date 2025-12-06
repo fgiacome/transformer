@@ -131,6 +131,22 @@ impl SigmoidActivation {
 }
 
 #[derive(Serialize, Deserialize)]
+pub struct RELUActivation {
+    inference: bool,
+    last_input: Option<Mat<f32>>,
+}
+
+impl RELUActivation {
+    /// Creates a new ReLU activation layer
+    pub fn new() -> Self {
+        Self {
+            inference: false,
+            last_input: None,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct SoftmaxActivation {
     inference: bool,
     last_output: Option<Mat<f32>>,
@@ -179,6 +195,49 @@ impl Model for SigmoidActivation {
         zip!(&mut grad_input, loss, sigmoid_output).for_each(|unzip!(grad, loss_val, s)| {
             let sigmoid_grad = *s * (1.0 - *s);
             *grad = *loss_val * sigmoid_grad;
+        });
+
+        grad_input
+    }
+
+    fn zero_grad(&mut self) { }
+
+    fn parameters_mut(&mut self) -> Vec<&mut Parameter> {
+        vec![]  // No trainable parameters
+    }
+}
+
+impl Model for RELUActivation {
+    fn set_inference(&mut self, inference: bool) {
+        self.inference = inference;
+    }
+
+    fn forward(&mut self, x: &Mat<f32>) -> Mat<f32> {
+        if !self.inference {
+            self.last_input = Some(x.clone());
+        }
+
+        // ReLU(x) = max(0, x)
+        let mut output = Mat::zeros(x.nrows(), x.ncols());
+
+        zip!(&mut output, x).for_each(|unzip!(out, x_val)| {
+            *out = x_val.max(0.0);
+        });
+
+        output
+    }
+
+    fn gradient(&mut self, loss: &Mat<f32>) -> Mat<f32> {
+        let last_input = self
+            .last_input
+            .as_ref()
+            .expect("Last input is not cached, cannot compute gradient");
+
+        // ReLU'(x) = 1 if x > 0, else 0
+        let mut grad_input = Mat::zeros(loss.nrows(), loss.ncols());
+
+        zip!(&mut grad_input, loss, last_input).for_each(|unzip!(grad, loss_val, x)| {
+            *grad = if *x > 0.0 { *loss_val } else { 0.0 };
         });
 
         grad_input
@@ -285,6 +344,7 @@ impl Model for Vec<Box<dyn Model>> {
 pub enum ModelType {
     Feedforward(Feedforward),
     Sigmoid(SigmoidActivation),
+    RELU(RELUActivation),
     Softmax(SoftmaxActivation),
 }
 
@@ -293,6 +353,7 @@ impl Model for ModelType {
         match self {
             ModelType::Feedforward(m) => m.set_inference(inference),
             ModelType::Sigmoid(m) => m.set_inference(inference),
+            ModelType::RELU(m) => m.set_inference(inference),
             ModelType::Softmax(m) => m.set_inference(inference),
         }
     }
@@ -301,6 +362,7 @@ impl Model for ModelType {
         match self {
             ModelType::Feedforward(m) => m.forward(x),
             ModelType::Sigmoid(m) => m.forward(x),
+            ModelType::RELU(m) => m.forward(x),
             ModelType::Softmax(m) => m.forward(x),
         }
     }
@@ -309,6 +371,7 @@ impl Model for ModelType {
         match self {
             ModelType::Feedforward(m) => m.gradient(loss),
             ModelType::Sigmoid(m) => m.gradient(loss),
+            ModelType::RELU(m) => m.gradient(loss),
             ModelType::Softmax(m) => m.gradient(loss),
         }
     }
@@ -317,6 +380,7 @@ impl Model for ModelType {
         match self {
             ModelType::Feedforward(m) => m.zero_grad(),
             ModelType::Sigmoid(m) => m.zero_grad(),
+            ModelType::RELU(m) => m.zero_grad(),
             ModelType::Softmax(m) => m.zero_grad(),
         }
     }
@@ -325,6 +389,7 @@ impl Model for ModelType {
         match self {
             ModelType::Feedforward(m) => m.parameters_mut(),
             ModelType::Sigmoid(m) => m.parameters_mut(),
+            ModelType::RELU(m) => m.parameters_mut(),
             ModelType::Softmax(m) => m.parameters_mut(),
         }
     }

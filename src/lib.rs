@@ -7,7 +7,7 @@ pub mod optimizers;
 pub mod io;
 
 // Re-export commonly used items
-pub use models::{Model, Feedforward, SigmoidActivation, SoftmaxActivation, ModelType};
+pub use models::{Model, Feedforward, SigmoidActivation, RELUActivation, SoftmaxActivation, ModelType};
 pub use losses::{Loss, CrossEntropyLoss};
 pub use optimizers::{Optimizer, SGD};
 
