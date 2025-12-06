@@ -1,15 +1,20 @@
 What is the best way of learning how a Deep Learning framework works?
 Write (a basic) one yourself!
 
+This creates relies on [Faer](https://docs.rs/faer) for matrix
+operations, but aside from that, it implements all other other
+abstractions with the intention of improving my understanding of how
+every piece works.
+
 With this project you can:
 * Build a neural network with linear layers and three possible
   activations (RELU, Sigmoid, Softmax).
 * Optimize it using backpropagation and SGD (Adam on its way).
 * Serialize and deserialize your models.
 
-A training program for the MNIST datasets is available as a binary crate
-as well as a testing program that runs inference on one random test
-image, also printing it to the terminal.
+A training program for the MNIST dataset is available as a binary crate
+as well as a testing program that runs inference on a random test
+image, also printing it (and the results) to the terminal.
 
 To run the MNIST training program, download the MNIST dataset to
 `datastes/mnist/`, then:
