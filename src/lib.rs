@@ -7,7 +7,7 @@ pub mod optimizers;
 pub mod io;
 
 // Re-export commonly used items
-pub use models::{Model, Feedforward, SigmoidActivation, SoftmaxActivation};
+pub use models::{Model, Feedforward, SigmoidActivation, SoftmaxActivation, ModelType};
 pub use losses::{Loss, CrossEntropyLoss};
 pub use optimizers::{Optimizer, SGD};
 
@@ -195,6 +195,49 @@ mod tests {
                         i, j
                     );
                 }
+            }
+        }
+
+        // Clean up
+        fs::remove_file(path).unwrap();
+    }
+
+    #[test]
+    fn test_network_serialization() {
+        use std::fs;
+
+        // Create a small network using Vec<ModelType>
+        let mut network: Vec<ModelType> = vec![
+            ModelType::Feedforward(Feedforward::new(10, 5)),
+            ModelType::Sigmoid(SigmoidActivation::new()),
+            ModelType::Feedforward(Feedforward::new(5, 3)),
+        ];
+
+        // Create test input
+        let input = Mat::from_fn(10, 2, |i, j| (i + j) as f32 * 0.1);
+        let original_output = network.forward(&input);
+
+        // Save network
+        let path = "test_network.bin";
+        io::save(&network, path).unwrap();
+
+        // Load network
+        let mut loaded_network: Vec<ModelType> = io::load(path).unwrap();
+
+        // Test that loaded network produces same output
+        let loaded_output = loaded_network.forward(&input);
+
+        assert_eq!(loaded_output.nrows(), original_output.nrows());
+        assert_eq!(loaded_output.ncols(), original_output.ncols());
+
+        for i in 0..original_output.nrows() {
+            for j in 0..original_output.ncols() {
+                assert_eq!(
+                    loaded_output[(i, j)],
+                    original_output[(i, j)],
+                    "Output mismatch at ({}, {})",
+                    i, j
+                );
             }
         }
 

@@ -266,3 +266,79 @@ impl Model for Vec<Box<dyn Model>> {
             .collect()
     }
 }
+
+/// Enum wrapper for all concrete model types to enable serialization
+#[derive(Serialize, Deserialize)]
+pub enum ModelType {
+    Feedforward(Feedforward),
+    Sigmoid(SigmoidActivation),
+    Softmax(SoftmaxActivation),
+}
+
+impl Model for ModelType {
+    fn set_inference(&mut self, inference: bool) {
+        match self {
+            ModelType::Feedforward(m) => m.set_inference(inference),
+            ModelType::Sigmoid(m) => m.set_inference(inference),
+            ModelType::Softmax(m) => m.set_inference(inference),
+        }
+    }
+
+    fn forward(&mut self, x: &Mat<f32>) -> Mat<f32> {
+        match self {
+            ModelType::Feedforward(m) => m.forward(x),
+            ModelType::Sigmoid(m) => m.forward(x),
+            ModelType::Softmax(m) => m.forward(x),
+        }
+    }
+
+    fn gradient(&mut self, loss: &Mat<f32>) -> Mat<f32> {
+        match self {
+            ModelType::Feedforward(m) => m.gradient(loss),
+            ModelType::Sigmoid(m) => m.gradient(loss),
+            ModelType::Softmax(m) => m.gradient(loss),
+        }
+    }
+
+    fn zero_grad(&mut self) {
+        match self {
+            ModelType::Feedforward(m) => m.zero_grad(),
+            ModelType::Sigmoid(m) => m.zero_grad(),
+            ModelType::Softmax(m) => m.zero_grad(),
+        }
+    }
+
+    fn parameters_mut(&mut self) -> Vec<&mut Parameter> {
+        match self {
+            ModelType::Feedforward(m) => m.parameters_mut(),
+            ModelType::Sigmoid(m) => m.parameters_mut(),
+            ModelType::Softmax(m) => m.parameters_mut(),
+        }
+    }
+}
+
+impl Model for Vec<ModelType> {
+    fn set_inference(&mut self, inference: bool) {
+        for model in self.iter_mut() {
+            model.set_inference(inference);
+        }
+    }
+
+    fn forward(&mut self, x: &Mat<f32>) -> Mat<f32> {
+        self.iter_mut().fold(x.clone(), |acc, model| model.forward(&acc))
+    }
+
+    fn gradient(&mut self, loss: &Mat<f32>) -> Mat<f32> {
+        self.iter_mut().rev().fold(loss.clone(), |acc, model| model.gradient(&acc))
+    }
+
+    fn zero_grad(&mut self) {
+        self.iter_mut().for_each(|model| model.zero_grad());
+    }
+
+    fn parameters_mut(&mut self) -> Vec<&mut Parameter> {
+        self.iter_mut()
+            .flat_map(|model| model.parameters_mut())
+            .collect()
+    }
+}
