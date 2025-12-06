@@ -9,6 +9,7 @@ every piece works.
 With this project you can:
 * Build a neural network with linear layers and three possible
   activations (RELU, Sigmoid, Softmax).
+* Use a loss function on your predictions, currently only Cross Entropy.
 * Optimize it using backpropagation and SGD (Adam on its way).
 * Serialize and deserialize your models.
 
