@@ -1,4 +1,5 @@
 use faer::prelude::*;
+use faer::{zip, unzip};
 use rand::rng;
 use rand_distr::{Distribution, Uniform};
 use serde::{Serialize, Deserialize};
@@ -71,9 +72,16 @@ impl Model for Feedforward {
         let wx = &self.weights.value * x;
 
         // Broadcast biases across all columns (batch dimension)
-        Mat::from_fn(wx.nrows(), wx.ncols(), |i, j| {
-            wx[(i, j)] + self.biases.value[(i, 0)]
-        })
+        let mut output = Mat::zeros(wx.nrows(), wx.ncols());
+
+        for j in 0..wx.ncols() {
+            zip!(&mut output.col_mut(j), &wx.col(j), &self.biases.value.col(0))
+                .for_each(|unzip!(out, wx_val, bias)| {
+                    *out = *wx_val + *bias;
+                });
+        }
+
+        output
     }
 
     fn gradient(&mut self, loss: &Mat<f32>) -> Mat<f32> {
@@ -145,9 +153,10 @@ impl Model for SigmoidActivation {
 
     fn forward(&mut self, x: &Mat<f32>) -> Mat<f32> {
         // sigmoid(x) = 1 / (1 + exp(-x))
-        let output = Mat::from_fn(x.nrows(), x.ncols(), |i, j| {
-            let val = x[(i, j)];
-            1.0 / (1.0 + (-val).exp())
+        let mut output = Mat::zeros(x.nrows(), x.ncols());
+
+        zip!(&mut output, x).for_each(|unzip!(out, x_val)| {
+            *out = 1.0 / (1.0 + (-*x_val).exp());
         });
 
         if !self.inference {
@@ -165,11 +174,14 @@ impl Model for SigmoidActivation {
 
         // sigmoid'(x) = sigmoid(x) * (1 - sigmoid(x))
         // Using cached sigmoid output to avoid recomputation
-        Mat::from_fn(loss.nrows(), loss.ncols(), |i, j| {
-            let s = sigmoid_output[(i, j)];
-            let sigmoid_grad = s * (1.0 - s);
-            loss[(i, j)] * sigmoid_grad
-        })
+        let mut grad_input = Mat::zeros(loss.nrows(), loss.ncols());
+
+        zip!(&mut grad_input, loss, sigmoid_output).for_each(|unzip!(grad, loss_val, s)| {
+            let sigmoid_grad = *s * (1.0 - *s);
+            *grad = *loss_val * sigmoid_grad;
+        });
+
+        grad_input
     }
 
     fn zero_grad(&mut self) { }
